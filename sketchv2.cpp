@@ -11,12 +11,13 @@ using namespace std;
 
 const int numParticles = 100;
 const int n_timesteps = 100;
+int num_digits = log(n_timesteps + 1) - 1; //only used in file export dw about it
 const double timestep = .2;
 const double MAX_WIDTH = 3; //not sure of measurements
 const double MAX_LENGTH = 4;
 const double DRAG_CONST =  0.04;
 
-string test_name = "initial_test";
+string test_name = "second_try";
 
 struct particle{
 	pdd pos, vel;
@@ -63,7 +64,11 @@ void ts_desmos(particle p){
 }
 
 void write_to_csv(particle p, int cur_timestep){
-    string file_name = "./" + test_name + "/" + test_name + ".csv."; file_name += to_string(cur_timestep);
+    //string file_name = "./" + test_name + "/" + test_name + ".csv.";
+    string numerical_part = to_string(cur_timestep);
+    while(numerical_part.length() < num_digits){numerical_part = "0" + numerical_part;}
+    //file_name += numerical_part;
+    string file_name = "./" + test_name + "/" + test_name + "-" + numerical_part + ".csv";
     ofstream fout(file_name, ios::app); //ios::app appends it instead of creating new file, very important
     fout << p.pos.first << "," << p.pos.second << "\n";
 }
