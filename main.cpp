@@ -10,7 +10,7 @@ using namespace std;
 #define pdd pair<double, double>
 
 const int numParticles = 100;
-const int n_timesteps = 200;
+const int n_timesteps = 1000;
 int num_digits = log10(n_timesteps) + 1; //only used in file export dw about it
 //int num_digits = 3;
 const double timestep = .2;
@@ -18,13 +18,17 @@ const double MAX_WIDTH = 3; //not sure of measurements
 const double MAX_LENGTH = 4;
 const double DRAG_CONST =  0.5;
 
-string test_name = "drag_test";
+string test_name = "stagger_test";
 string ensight_filename = "particles";
 
 struct particle{
     pdd pos, vel;
     double dir;
     int ind;
+    int strk = rand() % 20 + 85;
+    int cur = 0;
+    bool forwards = true;
+    int stagger;
 };
 
 //vector<vector<int>> pressure;
@@ -64,6 +68,7 @@ particle init_particle(int i){
     ret.pos.first = MAX_WIDTH * (rand() % 100) / 100;
     ret.pos.second = 0;
     ret.ind = i;
+    ret.stagger = i;
     return ret;
 }
 
@@ -177,6 +182,7 @@ void move_particles(){
                 continue;
             }
             */
+            if(i.stagger > 0){i.stagger--; continue;}
             int sign = 1;
             i.pos.first = i.pos.first + i.vel.first * timestep;
             i.pos.second = i.pos.second + i.vel.second * timestep;
@@ -186,6 +192,7 @@ void move_particles(){
                 stuck[ct] = true;
                 */
                 i = calculate_side_bounce(i);
+                i.pos.first = max(0.0, i.pos.first);
             }
             if (i.pos.second < 0) {
                 i.pos.second = 0;
@@ -197,9 +204,13 @@ void move_particles(){
                 stuck[ct] = true;
                 */
                 i = calculate_side_bounce(i);
+                i.pos.first = min(i.pos.first, MAX_WIDTH);
             }
             if (i.pos.second >= MAX_LENGTH) {
                 i.pos.second = MAX_LENGTH;
+                i.forwards = false;
+                i.cur = 0;
+                i.strk = ceil(double(i.strk) * (double(rand() % 10 + 60)/100));
                 sign = -1;
             }
             pdd pressure = calculate_pressure();
@@ -207,6 +218,16 @@ void move_particles(){
             i.vel.second = (i.vel.second + pressure.second * timestep);
             i.vel.first *= (1 - DRAG_CONST);
             i.vel.second *= (1 - DRAG_CONST) * sign; //water drag
+
+            //random stuff
+            if(i.forwards){i.vel.second = abs(i.vel.second);}
+            else{i.vel.second = -1 * abs(i.vel.second);}
+            i.cur++;
+            if(i.cur == i.strk){
+                i.cur = 0; i.forwards = 1-i.forwards;
+                i.strk = ceil(double(i.strk) * (double(rand() % 10 + 60)/100));
+            }
+
             //testing
             i.vel.first = max(i.vel.first, -0.75);
             i.vel.first = min(i.vel.first, 0.75); //bounding velocity??
